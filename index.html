@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monster Battle Arena</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(45deg, #0a0a0a, #1a0033, #330066, #0a0a0a);
+            background-size: 400% 400%;
+            animation: battleground 6s ease-in-out infinite;
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        @keyframes battleground {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .arena-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+        }
+
+        .arena-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .arena-title {
+            font-size: 3.5em;
+            background: linear-gradient(45deg, #ff0040, #ff6b35, #ffd700, #ff0040);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            margin-bottom: 10px;
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .arena-subtitle {
+            font-size: 1.3em;
+            color: #ffd700;
+            margin-bottom: 20px;
+        }
+
+        .battle-status {
+            text-align: center;
+            font-size: 1.5em;
+            color: #ff6b35;
+            margin-bottom: 20px;
+            height: 30px;
+        }
+
+        .battlefield {
+            display: grid;
+            grid-template-columns: 1fr 200px 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+
+        .monster-side {
+            background: rgba(26, 0, 51, 0.8);
+            border: 3px solid;
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            min-height: 400px;
+            transition: all 0.3s ease;
+        }
+
+        .player-side {
+            border-color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .enemy-side {
+            border-color: #ff0040;
+            box-shadow: 0 0 20px rgba(255, 0, 64, 0.3);
+        }
+
+        .monster-side.attacking {
+            animation: attack 0.8s ease-in-out;
+        }
+
+        @keyframes attack {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .monster-side.damaged {
+            animation: damage 0.5s ease-in-out;
+        }
+
+        @keyframes damage {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(0.95); filter: brightness(1.5) hue-rotate(45deg); }
+        }
+
+        .monster-name {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .player-side .monster-name {
+            color: #00ff88;
+        }
+
+        .enemy-side .monster-name {
+            color: #ff0040;
+        }
+
+        .monster-avatar {
+            width: 150px;
+            height: 150px;
+            margin: 15px auto;
+            border-radius: 50% 40% 60% 30%;
+            position: relative;
+            transition: all 0.5s ease;
+            animation: idle 3s ease-in-out infinite;
+        }
+
+        @keyframes idle {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .monster-avatar.ko {
+            filter: grayscale(100%) brightness(0.5);
+            transform: scale(0.8);
+        }
+
+        .health-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+            border: 2px solid #333;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0040, #ff6b35, #00ff88);
+            border-radius: 8px;
+            transition: width 0.8s ease;
+            position: relative;
+        }
+
+        .health-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.9em;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .monster-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .stat {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+
+        .vs-divider {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .vs-text {
+            font-size: 3em;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ffd700;
+            margin: 20px 0;
+            animation: vsGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes vsGlow {
+            0%, 100% { text-shadow: 0 0 20px #ffd700; }
+            50% { text-shadow: 0 0 40px #ffd700, 0 0 60px #ffd700; }
+        }
+
+        .round-counter {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 10px 20px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .action-panel {
+            background: rgba(26, 0, 51, 0.9);
+            border: 3px solid #8a2be2;
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .actions-title {
+            font-size: 1.5em;
+            color: #8a2be2;
+            margin-bottom: 20px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .attack-btn {
+            background: linear-gradient(45deg, #ff0040, #ff6b35);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 0, 64, 0.4);
+        }
+
+        .attack-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 0, 64, 0.6);
+        }
+
+        .defend-btn {
+            background: linear-gradient(45deg, #4169e1, #1e90ff);
+            color: white;
+            box-shadow: 0 5px 15px rgba(65, 105, 225, 0.4);
+        }
+
+        .defend-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(65, 105, 225, 0.6);
+        }
+
+        .special-btn {
+            background: linear-gradient(45deg, #8a2be2, #4b0082);
+            color: white;
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        .special-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(138, 43, 226, 0.6);
+        }
+
+        .heal-btn {
+            background: linear-gradient(45deg, #32cd32, #228b22);
+            color: white;
+            box-shadow: 0 5px 15px rgba(50, 205, 50, 0.4);
+        }
+
+        .heal-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(50, 205, 50, 0.6);
+        }
+
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .control-btn {
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #ffd700, #ffb347);
+            color: #000;
+            border: none;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .battle-log {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #333;
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .log-title {
+            color: #ffd700;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .log-entry {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+            animation: logSlide 0.5s ease;
+        }
+
+        @keyframes logSlide {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .damage-text {
+            position: absolute;
+            font-size: 2em;
+            font-weight: bold;
+            color: #ff0040;
+            text-shadow: 2px 2px 4px black;
+            pointer-events: none;
+            animation: damageFloat 1.5s ease-out forwards;
+        }
+
+        @keyframes damageFloat {
+            0% { opacity: 1; transform: translateY(0) scale(0.5); }
+            50% { opacity: 1; transform: translateY(-30px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-60px) scale(1); }
+        }
+
+        .heal-text {
+            color: #32cd32;
+        }
+
+        .victory-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .victory-content {
+            background: linear-gradient(45deg, #1a0033, #330066);
+            border: 3px solid #ffd700;
+            border-radius: 30px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            animation: victoryAppear 1s ease-out;
+        }
+
+        @keyframes victoryAppear {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .victory-title {
+            font-size: 3em;
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px #ffd700;
+        }
+
+        .victory-message {
+            font-size: 1.3em;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+
+        /* Monster Types */
+        .fire-monster {
+            background: radial-gradient(circle at 30% 30%, #ff4500, #ff0040);
+            box-shadow: 0 0 30px rgba(255, 69, 0, 0.8);
+        }
+
+        .water-monster {
+            background: radial-gradient(circle at 30% 30%, #1e90ff, #4169e1);
+            box-shadow: 0 0 30px rgba(30, 144, 255, 0.8);
+        }
+
+        .earth-monster {
+            background: radial-gradient(circle at 30% 30%, #228b22, #32cd32);
+            box-shadow: 0 0 30px rgba(34, 139, 34, 0.8);
+        }
+
+        .shadow-monster {
+            background: radial-gradient(circle at 30% 30%, #4b0082, #8a2be2);
+            box-shadow: 0 0 30px rgba(75, 0, 130, 0.8);
+        }
+
+        .light-monster {
+            background: radial-gradient(circle at 30% 30%, #ffd700, #ffff00);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            .battlefield {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            
+            .vs-divider {
+                order: 2;
+            }
+            
+            .arena-title {
+                font-size: 2.5em;
+            }
+            
+            .monster-avatar {
+                width: 120px;
+                height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="arena-container">
+        <div class="arena-header">
+            <h1 class="arena-title">⚔️ MONSTER BATTLE ARENA ⚔️</h1>
+            <p class="arena-subtitle">Epic battles await! Choose your strategy wisely!</p>
+        </div>
+
+        <div class="battle-status" id="battleStatus">Choose your monster and prepare for battle!</div>
+
+        <div class="battlefield">
+            <div class="monster-side player-side">
+                <h3 class="monster-name" id="playerName">Aubrey</h3>
+                <div class="monster-avatar fire-monster" id="playerAvatar"></div>
+                <div class="health-bar">
+                    <div class="health-fill" id="playerHealth" style="width: 100%;">
+                        <div class="health-text" id="playerHealthText">100/100</div>
+                    </div>
+                </div>
+                <div class="monster-stats">
+                    <div class="stat">⚔️ ATK: <span id="playerAttack">25</span></div>
+                    <div class="stat">🛡️ DEF: <span id="playerDefense">15</span></div>
+                    <div class="stat">⚡ SPD: <span id="playerSpeed">20</span></div>
+                    <div class="stat">✨ MP: <span id="playerMana">50</span></div>
+                </div>
+            </div>
+
+            <div class="vs-divider">
+                <div class="vs-text">VS</div>
+                <div class="round-counter">
+                    Round <span id="roundNumber">1</span>
+                </div>
+            </div>
+
+            <div class="monster-side enemy-side">
+                <h3 class="monster-name" id="enemyName">Shadow Beast</h3>
+                <div class="monster-avatar shadow-monster" id="enemyAvatar"></div>
+                <div class="health-bar">
+                    <div class="health-fill" id="enemyHealth" style="width: 100%;">
+                        <div class="health-text" id="enemyHealthText">80/80</div>
+                    </div>
+                </div>
+                <div class="monster-stats">
+                    <div class="stat">⚔️ ATK: <span id="enemyAttack">20</span></div>
+                    <div class="stat">🛡️ DEF: <span id="enemyDefense">12</span></div>
+                    <div class="stat">⚡ SPD: <span id="enemySpeed">18</span></div>
+                    <div class="stat">✨ MP: <span id="enemyMana">30</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-panel">
+            <h3 class="actions-title">🎯 Battle Actions</h3>
+            <div class="action-buttons">
+                <button class="action-btn attack-btn" id="attackBtn">⚔️ Attack</button>
+                <button class="action-btn defend-btn" id="defendBtn">🛡️ Defend</button>
+                <button class="action-btn special-btn" id="specialBtn">✨ Special Attack</button>
+                <button class="action-btn heal-btn" id="healBtn">💚 Heal</button>
+            </div>
+            
+            <div class="game-controls">
+                <button class="control-btn" id="newBattleBtn">New Battle</button>
+                <button class="control-btn" id="changeMonstersBtn">Change Monsters</button>
+            </div>
+        </div>
+
+        <div class="battle-log">
+            <div class="log-title">⚔️ Battle Log</div>
+            <div id="logEntries">
+                <div class="log-entry">Battle begins! Aubrey faces off against Shadow Beast!</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="victory-screen" id="victoryScreen">
+        <div class="victory-content">
+            <div class="victory-title" id="victoryTitle">🎉 VICTORY! 🎉</div>
+            <div class="victory-message" id="victoryMessage">Aubrey emerges victorious!</div>
+            <button class="control-btn" id="playAgainBtn">Battle Again!</button>
+        </div>
+    </div>
+
+    <script>
+        class BattleArena {
+            constructor() {
+                this.player = this.createMonster("Aubrey", "fire", {
+                    health: 100, attack: 25, defense: 15, speed: 20, mana: 50
+                });
+                
+                this.enemies = [
+                    { name: "Shadow Beast", type: "shadow", stats: {health: 80, attack: 20, defense: 12, speed: 18, mana: 30} },
+                    { name: "Aqua Drake", type: "water", stats: {health: 90, attack: 18, defense: 20, speed: 15, mana: 40} },
+                    { name: "Terra Titan", type: "earth", stats: {health: 120, attack: 22, defense: 25, speed: 10, mana: 35} },
+                    { name: "Lumina Angel", type: "light", stats: {health: 85, attack: 24, defense: 18, speed: 25, mana: 60} }
+                ];
+                
+                this.currentEnemy = null;
+                this.round = 1;
+                this.playerTurn = true;
+                this.isDefending = false;
+                this.battleActive = true;
+                
+                this.init();
+            }
+
+            createMonster(name, type, stats) {
+                return {
+                    name,
+                    type,
+                    maxHealth: stats.health,
+                    health: stats.health,
+                    attack: stats.attack,
+                    defense: stats.defense,
+                    speed: stats.speed,
+                    maxMana: stats.mana,
+                    mana: stats.mana
+                };
+            }
+
+            init() {
+                this.selectRandomEnemy();
+                this.setupEventListeners();
+                this.updateDisplay();
+                this.determineFirstTurn();
+            }
+
+            setupEventListeners() {
+                document.getElementById('attackBtn').addEventListener('click', () => this.playerAction('attack'));
+                document.getElementById('defendBtn').addEventListener('click', () => this.playerAction('defend'));
+                document.getElementById('specialBtn').addEventListener('click', () => this.playerAction('special'));
+                document.getElementById('healBtn').addEventListener('click', () => this.playerAction('heal'));
+                
+                document.getElementById('newBattleBtn').addEventListener('click', () => this.newBattle());
+                document.getElementById('changeMonstersBtn').addEventListener('click', () => this.changeMonsters());
+                document.getElementById('playAgainBtn').addEventListener('click', () => this.newBattle());
+            }
+
+            selectRandomEnemy() {
+                const enemyData = this.enemies[Math.floor(Math.random() * this.enemies.length)];
+                this.currentEnemy = this.createMonster(enemyData.name, enemyData.type, enemyData.stats);
+            }
+
+            determineFirstTurn() {
+                this.playerTurn = this.player.speed >= this.currentEnemy.speed;
+                const firstAttacker = this.playerTurn ? this.player.name : this.currentEnemy.name;
+                this.addLogEntry(`⚡ ${firstAttacker} moves first with superior speed!`);
+                
+                if (!this.playerTurn) {
+                    setTimeout(() => this.enemyTurn(), 1500);
+                }
+            }
+
+            playerAction(action) {
+                if (!this.battleActive || !this.playerTurn) return;
+                
+                this.isDefending = false;
+                
+                switch(action) {
+                    case 'attack':
+                        this.performAttack(this.player, this.currentEnemy);
+                        break;
+                    case 'defend':
+                        this.performDefend(this.player);
+                        break;
+                    case 'special':
+                        this.performSpecialAttack(this.player, this.currentEnemy);
+                        break;
+                    case 'heal':
+                        this.performHeal(this.player);
+                        break;
+                }
+                
+                this.updateDisplay();
+                
+                if (this.checkBattleEnd()) return;
+                
+                this.playerTurn = false;
+                setTimeout(() => this.enemyTurn(), 1500);
+            }
+
+            enemyTurn() {
+                if (!this.battleActive) return;
+                
+                // Simple AI: Choose action based on health and mana
+                const healthPercent = this.currentEnemy.health / this.currentEnemy.maxHealth;
+                const manaPercent = this.currentEnemy.mana / this.currentEnemy.maxMana;
+                
+                let action;
+                if (healthPercent < 0.3 && this.currentEnemy.mana >= 20) {
+                    action = 'heal';
+                } else if (manaPercent > 0.6 && Math.random() < 0.4) {
+                    action = 'special';
+                } else if (Math.random() < 0.2) {
+                    action = 'defend';
+                } else {
+                    action = 'attack';
+                }
+                
+                switch(action) {
+                    case 'attack':
+                        this.performAttack(this.currentEnemy, this.player);
+                        break;
+                    case 'defend':
+                        this.performDefend(this.currentEnemy);
+                        break;
+                    case 'special':
+                        this.performSpecialAttack(this.currentEnemy, this.player);
+                        break;
+                    case 'heal':
+                        this.performHeal(this.currentEnemy);
+                        break;
+                }
+                
+                this.updateDisplay();
+                
+                if (this.checkBattleEnd()) return;
+                
+                this.playerTurn = true;
+            }
+
+            performAttack(attacker, defender) {
+                const baseDamage = attacker.attack;
+                const randomFactor = 0.8 + Math.random() * 0.4; // 80-120% damage
+                const defenseReduction = this.isDefending && defender === this.player ? 0.5 : 1;
+                
+                let damage = Math.floor(baseDamage * randomFactor * defenseReduction);
+                damage = Math.max(1, damage - Math.floor(defender.defense * 0.3));
+                
+                defender.health = Math.max(0, defender.health - damage);
+                
+                this.addLogEntry(`⚔️ ${attacker.name} attacks ${defender.name} for ${damage} damage!`);
+                this.showDamageText(damage, defender === this.player ? 'playerAvatar' : 'enemyAvatar');
+                this.playAttackAnimation(attacker === this.player ? 'player-side' : 'enemy-side');
+                this.playDamageAnimation(defender === this.player ? 'player-side' : 'enemy-side');
+                this.playAttackSound();
+            }
+
+            performDefend(defender) {
+                this.isDefending = defender === this.player;
+                const manaGain = 10;
+                defender.mana = Math.min(defender.maxMana, defender.mana + manaGain);
+                
+                this.addLogEntry(`🛡️ ${defender.name} defends and recovers ${manaGain} mana!`);
+            }
+
+            performSpecialAttack(attacker, defender) {
+                const manaCost = 25;
+                if (attacker.mana < manaCost) {
+                    this.addLogEntry(`❌ ${attacker.name} doesn't have enough mana for special attack!`);
+                    return;
+                }
+                
+                attacker.mana -= manaCost;
+                const damage = Math.floor(attacker.attack * 1.8 + Math.random() * 20);
+                defender.health = Math.max(0, defender.health - damage);
+                
+                this.addLogEntry(`✨ ${attacker.name} unleashes a devastating special attack for ${damage} damage!`);
+                this.showDamageText(damage, defender === this.player ? 'playerAvatar' : 'enemyAvatar');
+                this.playSpecialSound();
+            }
+
+            performHeal(healer) {
+                const manaCost = 20;
+                if (healer.mana < manaCost) {
+                    this.addLogEntry(`❌ ${healer.name} doesn't have enough mana to heal!`);
+                    return;
+                }
+                
+                healer.mana -= manaCost;
+                const healAmount = Math.floor(healer.maxHealth * 0.3 + Math.random() * 15);
+                healer.health = Math.min(healer.maxHealth, healer.health + healAmount);
+                
+                this.addLogEntry(`💚 ${healer.name} heals for ${healAmount} health!`);
+                this.showDamageText(healAmount, healer === this.player ? 'playerAvatar' : 'enemyAvatar', true);
+            }
+
+            checkBattleEnd() {
+                if (this.player.health <= 0) {
+                    this.endBattle(false);
+                    return true;
+                } else if (this.currentEnemy.health <= 0) {
+                    this.endBattle(true);
+                    return true;
+                }
+                return false;
+            }
+
+            endBattle(playerWon) {
+                this.battleActive = false;
+                
+                if (playerWon) {
+                    this.addLogEntry(`🎉 ${this.player.name} emerges victorious!`);
+                    document.getElementById('victoryTitle').textContent = '🎉 VICTORY! 🎉';
+                    document.getElementById('victoryMessage').textContent = `${this.player.name} defeated ${this.currentEnemy.name}!`;
+                    document.getElementById('enemyAvatar').classList.add('ko');
+                } else {
+                    this.addLogEntry(`💀 ${this.player.name} has been defeated...`);
+                    document.getElementById('victoryTitle').textContent = '💀 DEFEAT 💀';
+                    document.getElementById('victoryMessage').textContent = `${this.currentEnemy.name} proved too powerful...`;
+                    document.getElementById('playerAvatar').classList.add('ko');
+                }
+                
+                setTimeout(() => {
+                    document.getElementById('victoryScreen').style.display = 'flex';
+                }, 2000);
+            }
+
+            newBattle() {
+                // Reset player
+                this.player.health = this.player.maxHealth;
+                this.player.mana = this.player.maxMana;
+                
+                // Select new enemy
+                this.selectRandomEnemy();
+                
+                // Reset battle state
+                this.round++;
+                this.battleActive = true;
+                this.isDefending = false;
+                
+                // Remove KO effects
+                document.getElementById('playerAvatar').classList.remove('ko');
+                document.getElementById('enemyAvatar').classList.remove('ko');
+                
+                // Hide victory screen
+                document.getElementById('victoryScreen').style.display = 'none';
+                
+                this.updateDisplay();
+                this.determineFirstTurn();
+                this.addLogEntry(`🆕 Round ${this.round} begins! ${this.player.name} vs ${this.currentEnemy.name}!`);
+            }
+
+            changeMonsters() {
+                const monsterTypes = ['fire', 'water', 'earth', 'shadow', 'light'];
+                const monsterNames = ['Aubrey', 'Blaze', 'Aqua', 'Terra', 'Shade', 'Luna'];
+                
+                const newType = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
+                const newName = monsterNames[Math.floor(Math.random() * monsterNames.length)];
+                
+                // Randomize stats slightly
+                const baseStats = { health: 100, attack: 25, defense: 15, speed: 20, mana: 50 };
+                Object.keys(baseStats).forEach(stat => {
+                    baseStats[stat] += Math.floor(Math.random() * 10 - 5); // ±5 variation
+                });
+                
+                this.player = this.createMonster(newName, newType, baseStats);
+                this.newBattle();
+                this.addLogEntry(`🔄 ${newName} the ${newType} monster joins the arena!`);
+            }
+
+            updateDisplay() {
+                // Update player
+                document.getElementById('playerName').textContent = this.player.name;
+                document.getElementById('playerAvatar').className = `monster-avatar ${this.player.type}-monster`;
+                this.updateHealthBar('player', this.player);
+                this.updateStats('player', this.player);
+                
+                // Update enemy
+                document.getElementById('enemyName').textContent = this.currentEnemy.name;
+                document.getElementById('enemyAvatar').className = `monster-avatar ${this.currentEnemy.type}-monster`;
+                this.updateHealthBar('enemy', this.currentEnemy);
+                this.updateStats('enemy', this.currentEnemy);
+                
+                // Update round
+                document.getElementById('roundNumber').textContent = this.round;
+                
+                // Update action buttons
+                this.updateActionButtons();
+            }
+
+            updateHealthBar(side, monster) {
+                const healthPercent = (monster.health / monster.maxHealth) * 100;
+                document.getElementById(`${side}Health`).style.width = healthPercent + '%';
+                document.getElementById(`${side}HealthText`).textContent = `${monster.health}/${monster.maxHealth}`;
+            }
+
+            updateStats(side, monster) {
+                document.getElementById(`${side}Attack`).textContent = monster.attack;
+                document.getElementById(`${side}Defense`).textContent = monster.defense;
+                document.getElementById(`${side}Speed`).textContent = monster.speed;
+                document.getElementById(`${side}Mana`).textContent = monster.mana;
+            }
+
+            updateActionButtons() {
+                const buttons = document.querySelectorAll('.action-btn');
+                buttons.forEach(btn => btn.disabled = !this.playerTurn || !this.battleActive);
+                
+                // Disable special and heal if not enough mana
+                document.getElementById('specialBtn').disabled = 
+                    !this.playerTurn || !this.battleActive || this.player.mana < 25;
+                document.getElementById('healBtn').disabled = 
+                    !this.playerTurn || !this.battleActive || this.player.mana < 20;
+            }
+
+            showDamageText(amount, targetId, isHeal = false) {
+                const target = document.getElementById(targetId);
+                const damageText = document.createElement('div');
+                damageText.className = `damage-text ${isHeal ? 'heal-text' : ''}`;
+                damageText.textContent = isHeal ? `+${amount}` : `-${amount}`;
+                
+                const rect = target.getBoundingClientRect();
+                damageText.style.left = rect.left + rect.width/2 - 20 + 'px';
+                damageText.style.top = rect.top + rect.height/2 + 'px';
+                
+                document.body.appendChild(damageText);
+                setTimeout(() => damageText.remove(), 1500);
+            }
+
+            playAttackAnimation(side) {
+                document.querySelector(`.${side}`).classList.add('attacking');
+                setTimeout(() => {
+                    document.querySelector(`.${side}`).classList.remove('attacking');
+                }, 800);
+            }
+
+            playDamageAnimation(side) {
+                document.querySelector(`.${side}`).classList.add('damaged');
+                setTimeout(() => {
+                    document.querySelector(`.${side}`).classList.remove('damaged');
+                }, 500);
+            }
+
+            playAttackSound() {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(150, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }
+
+            playSpecialSound() {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.3);
+                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.6);
+                
+                gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.6);
+            }
+
+            addLogEntry(message) {
+                const logContainer = document.getElementById('logEntries');
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                entry.textContent = message;
+                
+                logContainer.appendChild(entry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+                
+                // Limit log entries
+                if (logContainer.children.length > 15) {
+                    logContainer.removeChild(logContainer.children[0]);
+                }
+            }
+        }
+
+        // Initialize the battle arena
+        const arena = new BattleArena();
+    </script>
+</body>
+</html>
